@@ -1,0 +1,35 @@
+<resources>
+    <!-- Base application name -->
+    <string name="app_name">JWilkens</string>
+
+    <!-- Patient Information Selections -->
+    <string name="patient_id_box">Patient ID</string>
+    <string name="age_box">Age</string>
+    <string name="patient_name_box">Patient Name</string>
+    <string name="sex_box">Sex</string>
+    <string name="sex_male_option">Male</string>
+    <string name="sex_female_option">Female</string>
+    <string name="patient_id_box_placeholder">00</string>
+    <string name="age_box_placeholder">00</string>
+    <string name="patient_name_box_placeholder">John</string>
+
+
+    <!-- Button Labels -->
+    <string name="button_run">Run</string>
+    <string name="button_stop">Stop</string>
+
+    <!-- Graph Labels -->
+    <string name="label_500">500</string>
+    <string name="label_1000">1000</string>
+    <string name="label_1500">1500</string>
+    <string name="label_2000">2000</string>
+    <string name="label_2700">2700</string>
+    <string name="label_2750">2750</string>
+    <string name="label_2800">2800</string>
+    <string name="label_2850">2850</string>
+    <string name="label_2900">2900</string>
+    <string name="label_2950">2950</string>
+    <string name="label_3000">3000</string>
+    <string name="label_3050">3050</string>
+    <string name="label_3100">3100</string>
+</resources>
