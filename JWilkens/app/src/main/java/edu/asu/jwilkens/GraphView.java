@@ -42,6 +42,7 @@ public class GraphView extends View {
             this.verlabels = verlabels;
         this.type = type;
         paint = new Paint();
+        paint.setTextSize(25);
     }
 
     public void setValues(float[] newValues)
@@ -49,9 +50,15 @@ public class GraphView extends View {
         this.values = newValues;
     }
 
+    public void setValues(float[] newValues, String[] newHorlabels)
+    {
+        this.values = newValues;
+        this.horlabels = newHorlabels;
+    }
+
     @Override
     protected void onDraw(Canvas canvas) {
-        float border = 20;
+        float border = 25;
         float horstart = border * 2;
         float height = getHeight();
         float width = getWidth() - 1;
@@ -91,7 +98,8 @@ public class GraphView extends View {
         if (max != min) {
             paint.setColor(Color.LTGRAY);
             if (type == BAR) {
-                float datalength = values.length;
+                // MODIFICATION : Fixed Data Length for Horizontal Area
+                float datalength = 200;
                 float colwidth = (width - (2 * border)) / datalength;
                 for (int i = 0; i < values.length; i++) {
                     float val = values[i] - min;
@@ -100,7 +108,8 @@ public class GraphView extends View {
                     canvas.drawRect((i * colwidth) + horstart, (border - h) + graphheight, ((i * colwidth) + horstart) + (colwidth - 1), height - (border - 1), paint);
                 }
             } else {
-                float datalength = values.length;
+                // MODIFICATION : Fixed Data Length for Horizontal Area
+                float datalength = 200;
                 float colwidth = (width - (2 * border)) / datalength;
                 float halfcol = colwidth / 2;
                 float lasth = 0;
@@ -121,21 +130,23 @@ public class GraphView extends View {
 
     private float getMax() {
         float largest = Integer.MIN_VALUE;
+        /* MODIFICATION : Removed for fixed vertical labels.
         for (int i = 0; i < values.length; i++)
             if (values[i] > largest)
                 largest = values[i];
-
-        //largest = 3000;
+        */
+        largest = 2000;
         return largest;
     }
 
     private float getMin() {
         float smallest = Integer.MAX_VALUE;
+        /* MODIFICATION : Removed for fixed vertical labels.
         for (int i = 0; i < values.length; i++)
             if (values[i] < smallest)
                 smallest = values[i];
-
-        //smallest = 0;
+         */
+        smallest = 0;
         return smallest;
     }
 
