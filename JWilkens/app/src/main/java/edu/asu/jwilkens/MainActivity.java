@@ -14,6 +14,7 @@ import android.os.IBinder;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import java.util.Random;
 
@@ -49,17 +50,22 @@ public class MainActivity extends AppCompatActivity {
                 //resetGraphView();
                 if (drawRandom != null) {
                     drawRandom.cancel(true);
+                } else {
+                    Toast toast = Toast.makeText(MainActivity.this, "Not Running!", Toast.LENGTH_SHORT);
+                    toast.show();
                 }
-                drawRandom = null;
             }
         });
 
         run_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 //updateGraphView();
-
-                drawRandom = new slowTask().execute();
-
+                if (drawRandom == null) {
+                    drawRandom = new slowTask().execute();
+                } else {
+                    Toast toast = Toast.makeText(MainActivity.this, "Already Running!", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
             }
         });
 
@@ -87,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
             // TODO Auto-generated method stub
             try {
                 mService.resetGraphView(health_graph);
+                drawRandom = null;
             } catch (Exception e) {
                 e.printStackTrace();
             }
