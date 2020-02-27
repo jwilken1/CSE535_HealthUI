@@ -11,7 +11,7 @@
         android:requestLegacyExternalStorage="true"
         android:theme="@style/AppTheme">
         <service
-            android:name=".DrawRandomService"
+            android:name=".AccelerometerService"
             android:enabled="true"
             android:exported="true"></service>
 

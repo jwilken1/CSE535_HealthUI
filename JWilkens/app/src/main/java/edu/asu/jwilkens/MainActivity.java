@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private static String graph_title = "Health Graph UI";
     private AsyncTask drawRandom;
 
-    DrawRandomService mService;
+    AccelerometerService mService;
     boolean mBound = false;
 
     // UI Related Elements
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         // Bind to LocalService
-        Intent intent = new Intent(this, DrawRandomService.class);
+        Intent intent = new Intent(this, AccelerometerService.class);
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            DrawRandomService.LocalBinder binder = (DrawRandomService.LocalBinder) service;
+            AccelerometerService.LocalBinder binder = (AccelerometerService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
         }
