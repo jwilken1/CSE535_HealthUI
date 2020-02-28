@@ -58,7 +58,7 @@ public class DrawService extends Service implements SensorEventListener {
         Sensor mySensor = event.sensor;
         if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             sensor_x = event.values[0];
-            sensor_y = event.values[1];
+            sensor_y = event.values[1] - (float) 9.81;
             sensor_z = event.values[2];
         }
     }
@@ -152,6 +152,7 @@ public class DrawService extends Service implements SensorEventListener {
         this.health_graph_x = health_graph_x;
         this.health_graph_y = health_graph_y;
         this.health_graph_z = health_graph_z;
+        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
         int size = 0;
         int startTime = current_location;
         graph_horlabels = new String[]{Integer.toString(startTime), Integer.toString(startTime + 2),
@@ -171,7 +172,6 @@ public class DrawService extends Service implements SensorEventListener {
             health_graph_y.invalidate();
             health_graph_z.setValues(graph_values_z, graph_horlabels);
             health_graph_z.invalidate();
-            size++;
             current_location++;
             try {
                 Thread.sleep(1000);                 //1000 milliseconds is one second.
