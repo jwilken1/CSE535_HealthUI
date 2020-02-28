@@ -20,18 +20,18 @@ import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
     // Graph related values
-    private GraphView health_graph;
+    private GraphView health_graph_x, health_graph_y, health_graph_z;
     private float[] graph_values;
     private static String[] graph_horlabels = {"0", "50", "100", "150", "200"};
-    private static String[] graph_verlabels = {"2000", "1500", "1000", "500", "0"};
+    private static String[] graph_verlabels = {"20", "0", "-20"};
     private static String graph_title = "Health Graph UI";
     private AsyncTask drawRandom;
 
-    AccelerometerService mService;
+    DrawService mService;
     boolean mBound = false;
 
     // UI Related Elements
-    private RelativeLayout graph_constraint;
+    private RelativeLayout graph_constraint_x, graph_constraint_y, graph_constraint_z;
     private Button run_button, stop_button;
 
     @Override
@@ -40,9 +40,13 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         run_button = (Button) findViewById(R.id.runButton);
         stop_button = (Button) findViewById(R.id.stopButton);
-        graph_constraint = (RelativeLayout) findViewById(R.id.graph_constraint);
+        graph_constraint_x = (RelativeLayout) findViewById(R.id.graph_constraint_x);
+        graph_constraint_y = (RelativeLayout) findViewById(R.id.graph_constraint_y);
+        graph_constraint_z = (RelativeLayout) findViewById(R.id.graph_constraint_z);
         createGraphView();
-        graph_constraint.addView(health_graph);
+        graph_constraint_x.addView(health_graph_x);
+        graph_constraint_y.addView(health_graph_y);
+        graph_constraint_z.addView(health_graph_z);
         drawRandom = null;
 
         stop_button.setOnClickListener(new View.OnClickListener() {
@@ -81,9 +85,9 @@ public class MainActivity extends AppCompatActivity {
         protected Void doInBackground(String... params) {
             // TODO Auto-generated method stub
             try {
-                mService.updateGraphView(health_graph);
+                mService.updateGraphView(health_graph_x, health_graph_y, health_graph_z);
             } catch (Exception e) {
-                e.printStackTrace();
+                    e.printStackTrace();
             }
             return null;
         }
@@ -92,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onCancelled() {
             // TODO Auto-generated method stub
             try {
-                mService.resetGraphView(health_graph);
+                mService.resetGraphView(health_graph_x, health_graph_y, health_graph_z);
                 drawRandom = null;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -104,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         // Bind to LocalService
-        Intent intent = new Intent(this, AccelerometerService.class);
+        Intent intent = new Intent(this, DrawService.class);
         bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
@@ -121,7 +125,7 @@ public class MainActivity extends AppCompatActivity {
         public void onServiceConnected(ComponentName className,
                                        IBinder service) {
             // We've bound to LocalService, cast the IBinder and get LocalService instance
-            AccelerometerService.LocalBinder binder = (AccelerometerService.LocalBinder) service;
+            DrawService.LocalBinder binder = (DrawService.LocalBinder) service;
             mService = binder.getService();
             mBound = true;
         }
@@ -140,11 +144,21 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < graph_values.length; i++) {
             graph_values[i] = rand.nextInt(2001);
         }
-        health_graph = new GraphView(this, graph_values, graph_title, graph_horlabels, graph_verlabels, GraphView.LINE);
-        health_graph.setLayoutParams(new ConstraintLayout.LayoutParams(
+        health_graph_x = new GraphView(this, graph_values, graph_title + " X", graph_horlabels, graph_verlabels, GraphView.LINE);
+        health_graph_x.setLayoutParams(new ConstraintLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
-        health_graph.setBackgroundColor(Color.BLACK);
+        health_graph_x.setBackgroundColor(Color.BLACK);
+        health_graph_y = new GraphView(this, graph_values, graph_title + " Y", graph_horlabels, graph_verlabels, GraphView.LINE);
+        health_graph_y.setLayoutParams(new ConstraintLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        health_graph_y.setBackgroundColor(Color.BLACK);
+        health_graph_z = new GraphView(this, graph_values, graph_title +" Z", graph_horlabels, graph_verlabels, GraphView.LINE);
+        health_graph_z.setLayoutParams(new ConstraintLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+        health_graph_z.setBackgroundColor(Color.BLACK);
     }
 
     //Context context, float[] values, String title, String[] horlabels, String[] verlabels, boolean type
@@ -152,8 +166,8 @@ public class MainActivity extends AppCompatActivity {
         /* Data */
         graph_values = new float[0];
         graph_horlabels = new String[] {"0", "50", "100", "150", "200"};
-        health_graph.setValues(graph_values, graph_horlabels);
-        health_graph.invalidate();
+        health_graph_x.setValues(graph_values, graph_horlabels);
+        health_graph_x.invalidate();
     }
 
     //Context context, float[] values, String title, String[] horlabels, String[] verlabels, boolean type
@@ -168,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < graph_values.length; i++) {
             graph_values[i] = rand.nextInt(2001);
         }
-        health_graph.setValues(graph_values, graph_horlabels);
-        health_graph.invalidate();
+        health_graph_x.setValues(graph_values, graph_horlabels);
+        health_graph_x.invalidate();
     }
 }

@@ -135,7 +135,7 @@ public class GraphView extends View {
             if (values[i] > largest)
                 largest = values[i];
         */
-        largest = 2000;
+        largest = 20;
         return largest;
     }
 
@@ -146,7 +146,7 @@ public class GraphView extends View {
             if (values[i] < smallest)
                 smallest = values[i];
          */
-        smallest = 0;
+        smallest = -20;
         return smallest;
     }
 
