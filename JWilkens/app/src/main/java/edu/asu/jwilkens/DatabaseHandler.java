@@ -59,7 +59,7 @@ public class DatabaseHandler extends SQLiteOpenHelper {
     // SQL Statements
     String SQL_CREATE_PATIENT_TABLE =
             "CREATE TABLE " + DatabaseHandler.TABLE_LABEL + " (" +
-            DatabaseHandler.COLUMN_T + " TEXT NOT NULL," +
+            DatabaseHandler.COLUMN_T + " INTEGER NOT NULL," +
             DatabaseHandler.COLUMN_X + " FLOAT NOT NULL," +
             DatabaseHandler.COLUMN_Y + " FLOAT NOT NULL," +
             DatabaseHandler.COLUMN_Z +  " FLOAT NOT NULL)";

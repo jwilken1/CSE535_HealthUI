@@ -11,83 +11,109 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 
-public class DrawService extends Service implements SensorEventListener {
+public class DrawService extends Service {
     private final IBinder binder = new LocalBinder();
+    /**
     private GraphView health_graph_x, health_graph_y, health_graph_z;
     private float[] graph_values_y, graph_values_x, graph_values_z;
     private static String[] graph_horlabels = {"0", "50", "100", "150", "200"};
-    private float[] graph_values_array_x, graph_values_array_y,graph_values_array_z;
+    private static String[] graph_verlabels = {"20", "0", "-20"};
+    private ArrayList<Float> graph_values_array_x, graph_values_array_y,graph_values_array_z;
     // private Random rand;
     private int current_location;
     private SensorManager sensorManager;
     private Sensor sensor;
     float sensor_x, sensor_y, sensor_z;
     int arrayloc = 0;
+    static int ACCE_FILTER_DATA_MIN_TIME = 1000; // 1000ms
+    long lastSaved = System.currentTimeMillis();
+    int startTime = 0;
+    int size = 0;
+     **/
 
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
 
 
     public class LocalBinder  extends Binder {
         DrawService getService() {
+            /**
+            graph_values_array_x = new ArrayList<Float>();
+            graph_values_array_y = new ArrayList<Float>();
+            graph_values_array_z = new ArrayList<Float>();
             sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
             if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
-                sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-                sensorManager.registerListener(DrawService.this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+                if (sensor == null) {
+                    sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                }
             } else {
                 Toast toast = Toast.makeText(DrawService.this, "No Accelerometer!", Toast.LENGTH_LONG);
                 toast.show();
             }
-            graph_values_array_x = new float[3000];
-            graph_values_array_y = new float[3000];
-            graph_values_array_z = new float[3000];
-            /** Commenting out random generator from part one to replace with sensor!
-            rand = new Random();
-            graph_values_array = new float[3000];
-            for (int i = 0; i < graph_values_array.length; i++) {
-                graph_values_array[i] = rand.nextInt(2001);
-            }**/
             current_location = 0;
-            // Return this instance of LocalService so clients can call public methods
+             **/
             return DrawService.this;
         }
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        Sensor mySensor = event.sensor;
-        if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            sensor_x = event.values[0];
-            sensor_y = event.values[1] - (float) 9.81;
-            sensor_z = event.values[2];
-        }
-    }
+    /**
+    public void setViews(GraphView health_graph_x, GraphView health_graph_y, GraphView health_graph_z) {
+        this.health_graph_x = health_graph_x;
+        this.health_graph_y = health_graph_y;
+        this.health_graph_z = health_graph_z;
+    }**/
 
+    /**
+    //onResume() register the accelerometer for listening the events
     protected void onResume(){
         this.onResume();
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
-    }
+    }**/
 
+    /**
+    //onPause() unregister the accelerometer for stop listening the events
     protected void onPause(){
         this.onPause();
-        sensorManager.unregisterListener(this);
-    }
+        sensorManager.unregisterListener(this, sensor);
+    }**/
 
+    /**
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+
+    } **/
+
+    /**
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
-    }
+    }**/
 
+    /**
     @Override
     public IBinder onBind(Intent intent) {
         // TODO: Return the communication channel to the service.
         return binder;
-    }
+    }**/
 
-    public void resetGraphView(GraphView health_graph_x, GraphView health_graph_y, GraphView health_graph_z) {
-        this.health_graph_x = health_graph_x;
-        this.health_graph_y = health_graph_y;
-        this.health_graph_z = health_graph_z;
+    /**
+    public void unregiserSensor() {
+        sensorManager.unregisterListener(this, sensor);
+        this.onPause();
+        Toast toast = Toast.makeText(DrawService.this, "Unregistered!", Toast.LENGTH_LONG);
+        toast.show();
+    }**/
+
+    /**
+    public void resetGraphView() {
         graph_values_x = new float[0];
         graph_values_y = new float[0];
         graph_values_z = new float[0];
@@ -99,7 +125,7 @@ public class DrawService extends Service implements SensorEventListener {
         health_graph_z.setValues(graph_values_z, graph_horlabels);
         health_graph_z.invalidate();
         Thread.interrupted();
-    }
+    }**/
 
     /**
     public void resetGraphView(GraphView health_graph) {
@@ -112,9 +138,10 @@ public class DrawService extends Service implements SensorEventListener {
         Thread.interrupted();
     }**/
 
+    /**
     public void setStartTime(int time) {
         current_location = time;
-    }
+    }**/
 
     /**
     //Context context, float[] values, String title, String[] horlabels, String[] verlabels, boolean type
@@ -147,12 +174,15 @@ public class DrawService extends Service implements SensorEventListener {
         }
     } **/
 
-    public void updateGraphView(GraphView health_graph_x, GraphView health_graph_y, GraphView health_graph_z) {
-        /* Data */
-        this.health_graph_x = health_graph_x;
-        this.health_graph_y = health_graph_y;
-        this.health_graph_z = health_graph_z;
+    /**
+    public void updateGraphView() {
+
+        startTime = current_location;
+        graph_horlabels = new String[]{Integer.toString(startTime), Integer.toString(startTime + 2),
+                Integer.toString(startTime + 4), Integer.toString(startTime + 6), Integer.toString(startTime + 8), Integer.toString(startTime + 10)};
+        size = 0;
         sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+
         int size = 0;
         int startTime = current_location;
         graph_horlabels = new String[]{Integer.toString(startTime), Integer.toString(startTime + 2),
@@ -182,7 +212,29 @@ public class DrawService extends Service implements SensorEventListener {
             } catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
             }
-
         }
-    }
+    }**/
+
+    /**
+    public void updateGraphViewRegister() {
+        size++;
+        graph_values_x = new float[size];
+        graph_values_y = new float[size];
+        graph_values_z = new float[size];
+        graph_values_array_x.add(sensor_x);
+        graph_values_array_y.add(sensor_y);
+        graph_values_array_z.add(sensor_z);
+        for (int i = 0; i < graph_values_x.length; i++) {
+            graph_values_x[i] = graph_values_array_x.get(i + startTime);
+            graph_values_y[i] = graph_values_array_y.get(i + startTime);
+            graph_values_z[i] = graph_values_array_z.get(i + startTime);
+        }
+        health_graph_x.setValues(graph_values_x, graph_horlabels);
+        health_graph_x.invalidate();
+        health_graph_y.setValues(graph_values_y, graph_horlabels);
+        health_graph_y.invalidate();
+        health_graph_z.setValues(graph_values_z, graph_horlabels);
+        health_graph_z.invalidate();
+        current_location++;
+    } **/
 }

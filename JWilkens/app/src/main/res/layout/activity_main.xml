@@ -61,7 +61,7 @@
             android:layout_height="match_parent">
 
             <EditText
-                android:id="@+id/editText1"
+                android:id="@+id/patient_id"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -73,7 +73,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
             <EditText
-                android:id="@+id/editText2"
+                android:id="@+id/patient_age"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -85,7 +85,7 @@
                 android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
             <EditText
-                android:id="@+id/editText3"
+                android:id="@+id/patient_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -104,18 +104,20 @@
                 android:orientation="vertical">
 
                 <RadioButton
-                    android:id="@+id/radioButton"
+                    android:id="@+id/radio_male"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sex_male_option"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:onClick="onRadioButtonClicked"/>
 
                 <RadioButton
-                    android:id="@+id/radioButton2"
+                    android:id="@+id/radio_female"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/sex_female_option"
-                    android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+                    android:textAppearance="@style/TextAppearance.AppCompat.Small"
+                    android:onClick="onRadioButtonClicked"/>
             </RadioGroup>
         </TableRow>
 

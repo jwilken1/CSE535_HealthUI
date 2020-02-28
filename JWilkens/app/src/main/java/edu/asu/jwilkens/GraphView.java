@@ -21,6 +21,7 @@ public class GraphView extends View {
     private String[] verlabels;
     private String title;
     private boolean type;
+    float datalength = 20;
 
     public GraphView(Context context, float[] values, String title, String[] horlabels, String[] verlabels, boolean type) {
         super(context);
@@ -99,7 +100,7 @@ public class GraphView extends View {
             paint.setColor(Color.LTGRAY);
             if (type == BAR) {
                 // MODIFICATION : Fixed Data Length for Horizontal Area
-                float datalength = 200;
+                //datalength = 200;
                 float colwidth = (width - (2 * border)) / datalength;
                 for (int i = 0; i < values.length; i++) {
                     float val = values[i] - min;
@@ -109,7 +110,7 @@ public class GraphView extends View {
                 }
             } else {
                 // MODIFICATION : Fixed Data Length for Horizontal Area
-                float datalength = 200;
+                //datalength = 200;
                 float colwidth = (width - (2 * border)) / datalength;
                 float halfcol = colwidth / 2;
                 float lasth = 0;
