@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     // UI Related Elements
     private RelativeLayout graph_constraint_x, graph_constraint_y, graph_constraint_z;
-    private Button run_button, stop_button;
+    private Button run_button, stop_button, upload_button, download_button;
     EditText edit_patient_name, edit_patient_age, edit_patient_id;
 
     /**
@@ -58,8 +58,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        run_button = (Button) findViewById(R.id.runButton);
-        stop_button = (Button) findViewById(R.id.stopButton);
+        run_button = (Button) findViewById(R.id.button_run);
+        stop_button = (Button) findViewById(R.id.button_stop);
+        upload_button = (Button) findViewById(R.id.button_upload);
+        download_button = (Button) findViewById(R.id.button_download);
         edit_patient_name = (EditText) findViewById(R.id.patient_name);
         edit_patient_age = (EditText) findViewById(R.id.patient_age);
         edit_patient_id = (EditText) findViewById(R.id.patient_id);
@@ -110,6 +112,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     Toast toast = Toast.makeText(MainActivity.this, "Already Running!", Toast.LENGTH_SHORT);
                     toast.show();
                 }
+            }
+        });
+
+        upload_button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Toast toast = Toast.makeText(MainActivity.this, "Upload Clicked!", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+        });
+
+        download_button.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Toast toast = Toast.makeText(MainActivity.this, "Download Clicked!", Toast.LENGTH_SHORT);
+                toast.show();
             }
         });
 
@@ -165,7 +181,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-
     /**
      * The section below handles all graphs views! This includes:
      * ***** Creating initial Graphs
@@ -203,7 +218,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         graph_horlabels = new String[]{Integer.toString(startTime), Integer.toString(startTime + 5),
                 Integer.toString(startTime + 10), Integer.toString(startTime + 10), Integer.toString(startTime + 20)};
         size = 0;
-        sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+        new ActivateSensor().execute();
     }
 
     /**
@@ -273,11 +288,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
         }
-
         @Override
         protected Void doInBackground(Void... params) {
             try {
                 updateGraphViewRegistered();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Async Task to start sensor!
+     */
+    private class ActivateSensor extends AsyncTask<Void, Void, Void>{
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                sensorManager.registerListener(MainActivity.this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
             } catch (Exception e) {
                 e.printStackTrace();
             }

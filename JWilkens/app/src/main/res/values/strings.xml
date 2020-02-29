@@ -17,4 +17,6 @@
     <!-- Button Labels -->
     <string name="button_run">Run</string>
     <string name="button_stop">Stop</string>
+    <string name="button_upload">Upload</string>
+    <string name="button_download">Download</string>
 </resources>
