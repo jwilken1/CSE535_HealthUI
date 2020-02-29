@@ -12,13 +12,7 @@ import java.util.Random;
 
 public class DrawRandomService extends Service implements SensorEventListener {
     private final IBinder binder = new LocalBinder();
-    private GraphView health_graph;
-    private float[] graph_values;
-    private static String[] graph_horlabels = {"0", "50", "100", "150", "200"};
-    private static String[] graph_verlabels = {"2000", "1500", "1000", "500", "0"};
-    private float[] graph_values_array;
-    private Random rand;
-    private int current_location;
+
 
     /**
      * Update w/ check for interval. If passed, calls UI update.
