@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     long lastSaved = System.currentTimeMillis();
     float sensor_x, sensor_y, sensor_z;
 
-    // Async Task variables
+    //Async Task variables
     //private AsyncTask drawRandom;
     //DrawService mService;
 
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sensor_x = event.values[0];
                 sensor_y = event.values[1] - (float) 9.81;
                 sensor_z = event.values[2];
-                updateGraphViewRegistered();
+                new UpdateGraphs().execute();
             }
         }
     }
@@ -165,74 +165,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    /**
-    private class slowTask extends AsyncTask<String, Long, Void> {
-        @Override
-        protected void onPreExecute(){
-            mService.setViews(health_graph_x, health_graph_y, health_graph_z);
-            mService.setStartTime(0);
-        }
-
-        @Override
-        protected Void doInBackground(String... params) {
-            // TODO Auto-generated method stub
-            try {
-                mService.updateGraphView();
-            } catch (Exception e) {
-                    e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onCancelled() {
-            // TODO Auto-generated method stub
-            Toast toast = Toast.makeText(MainActivity.this, "Stop Sent 2!", Toast.LENGTH_SHORT);
-            toast.show();
-            try {
-                mService.unregiserSensor();
-                mService.resetGraphView();
-                drawRandom = null;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            this.onCancelled();
-        }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Bind to LocalService
-        Intent intent = new Intent(this, DrawService.class);
-        bindService(intent, connection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        unbindService(connection);
-        mBound = false;
-    }
-
-    private ServiceConnection connection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className,
-                                       IBinder service) {
-            // We've bound to LocalService, cast the IBinder and get LocalService instance
-            DrawService.LocalBinder binder = (DrawService.LocalBinder) service;
-            mService = binder.getService();
-            mBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBound = false;
-        }
-    };
-    **/
-
 
     /**
      * The section below handles all graphs views! This includes:
@@ -240,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
      * ***** Creating a listener when run is called.
      * ***** A response for callback when sensor updates.
      * ***** A reset graph view to zero out any data from UI only.
+     * ***** Redraw Graphs from Sensor Updates!
      */
     private void createGraphViews() {
         /* Data */
@@ -326,6 +259,31 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         health_graph_y.invalidate();
         health_graph_z.setValues(graph_values_z, graph_horlabels);
         health_graph_z.invalidate();
-        Thread.interrupted();
+    }
+
+    /**
+     * Async Task to re-draw graphs!
+     */
+    private class UpdateGraphs extends AsyncTask<Void, Void, Void>{
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            try {
+                updateGraphViewRegistered();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
     }
 }
+
+
