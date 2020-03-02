@@ -3,6 +3,7 @@ package edu.asu.jwilkens;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -10,20 +11,30 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
     // Graph related values
     private GraphView health_graph_x, health_graph_y, health_graph_z;
     private float[] graph_values;
-    private static String[] graph_horlabels = new String[] {"0", "5", "10", "15", "20"};
+    private static String[] graph_horlabels = new String[]{"0", "5", "10", "15", "20"};
     private static String[] graph_verlabels = {"20", "0", "-20"};
     private static String graph_title = "Health Graph UI";
     // State of data variables
@@ -31,7 +42,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     int startTime = 0;
     int size = 0;
     private float[] graph_values_y, graph_values_x, graph_values_z;
-    private ArrayList<Float> graph_values_array_x, graph_values_array_y,graph_values_array_z;
+    private ArrayList<Float> graph_values_array_x, graph_values_array_y, graph_values_array_z;
     protected String patient_id, patient_age, patient_name, patient_sex;
     // Sensor Variables
     private SensorManager sensorManager;
@@ -40,11 +51,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     static int ACCE_FILTER_DATA_MIN_TIME = 1000; // 1000ms
     long lastSaved = System.currentTimeMillis();
     float sensor_x, sensor_y, sensor_z;
-
-    //Async Task variables
-    //private AsyncTask drawRandom;
-    //DrawService mService;
-
+    // Database information
+    File database_file_down;
+    DatabaseHandler PATIENT_DATABASE;
+    private final String SERVER_URL = "http://localserver:5000";
+    public final String DATABASE_NAME = DatabaseHandler.DATABASE_NAME;
+    protected String patient_table_name;
+    DatabaseHandler PATIENT_DATABASE_DOWNLOADED;
     // UI Related Elements
     private RelativeLayout graph_constraint_x, graph_constraint_y, graph_constraint_z;
     private Button run_button, stop_button, upload_button, download_button;
@@ -52,11 +65,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     /**
      * Activity on Create, initialization!
+     *
      * @param savedInstanceState Activity Instance for App.
      */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        PATIENT_DATABASE = new DatabaseHandler(this);
         setContentView(R.layout.activity_main);
         run_button = (Button) findViewById(R.id.button_run);
         stop_button = (Button) findViewById(R.id.button_stop);
@@ -76,6 +91,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         graph_values_array_x = new ArrayList<Float>();
         graph_values_array_y = new ArrayList<Float>();
         graph_values_array_z = new ArrayList<Float>();
+        patient_sex = null;
+        patient_name = null;
+        patient_age = null;
+        patient_id = null;
 
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
@@ -90,7 +109,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         stop_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //resetGraphView();
                 if (running) {
                     running = false;
                     sensorManager.unregisterListener(MainActivity.this, sensor);
@@ -104,12 +122,43 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         run_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                //updateGraphView();
-                if (!running) {
-                    running = true;
-                    updateGraphView();
+                if (!CheckExternalStorageAvail()) {
+                    Toast toast = Toast.makeText(MainActivity.this, "No External Storage!", Toast.LENGTH_SHORT);
+                    toast.show();
+                    return;
+                }
+                if (checkPatientData()) {
+                    if (!running) {
+                        try {
+                            String patient_table_name_temp = patient_table_name;
+                            patient_table_name = edit_patient_name.getText().toString() + "_"
+                                    + edit_patient_id.getText().toString() + "_"
+                                    + edit_patient_age.getText().toString() + "_"
+                                    + patient_sex;
+                            if (!patient_table_name_temp.equals(patient_table_name)) {
+                                startTime = 0;
+                                size = 0;
+                                current_location = 0;
+                                graph_values_array_x = new ArrayList<Float>();
+                                graph_values_array_y = new ArrayList<Float>();
+                                graph_values_array_z = new ArrayList<Float>();
+                            }
+                            PATIENT_DATABASE.addPatientTable(patient_table_name);
+                            Toast toast = Toast.makeText(MainActivity.this, patient_table_name, Toast.LENGTH_SHORT);
+                            toast.show();
+                            running = true;
+                            updateGraphView();
+                        }
+                        catch (Exception e) {
+                            Toast toast = Toast.makeText(MainActivity.this, "Error!", Toast.LENGTH_SHORT);
+                            toast.show();
+                        }
+                    } else {
+                        Toast toast = Toast.makeText(MainActivity.this, "Already Running!", Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
                 } else {
-                    Toast toast = Toast.makeText(MainActivity.this, "Already Running!", Toast.LENGTH_SHORT);
+                    Toast toast = Toast.makeText(MainActivity.this, "Enter Patient Info!", Toast.LENGTH_SHORT);
                     toast.show();
                 }
             }
@@ -117,43 +166,63 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         upload_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Toast toast = Toast.makeText(MainActivity.this, "Upload Clicked!", Toast.LENGTH_SHORT);
-                toast.show();
+                new UploadDatabaseFile().execute();
             }
         });
 
         download_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                Toast toast = Toast.makeText(MainActivity.this, "Download Clicked!", Toast.LENGTH_SHORT);
-                toast.show();
+                if (checkPatientData()) {
+                    if (!running) {
+                        try {
+                            patient_table_name = edit_patient_name.getText().toString() + "_"
+                                    + edit_patient_id.getText().toString() + "_"
+                                    + edit_patient_age.getText().toString() + "_"
+                                    + patient_sex;
+                            running = true;
+                            new DownloadDatabaseFile().execute();
+                        }
+                        catch (Exception e) {
+                            Toast toast = Toast.makeText(MainActivity.this, "Error!", Toast.LENGTH_SHORT);
+                            toast.show();
+                        }
+                    } else {
+                        Toast toast = Toast.makeText(MainActivity.this, "Please stop before download!", Toast.LENGTH_SHORT);
+                        toast.show();
+                    }
+                } else {
+                    Toast toast = Toast.makeText(MainActivity.this, "Enter Patient Info!", Toast.LENGTH_SHORT);
+                    toast.show();
+                }
             }
         });
-
     }
 
     /**
      * Adopted from developer.android.com for:
      * ***** Listening for patient sex.
+     *
      * @param view Currrent View
      */
     public void onRadioButtonClicked(View view) {
         // Is the button now checked?
         boolean checked = ((RadioButton) view).isChecked();
         // Check which radio button was clicked
-        switch(view.getId()) {
+        switch (view.getId()) {
             case R.id.radio_female:
                 if (checked)
                     patient_sex = "Female";
-                    break;
+                break;
             case R.id.radio_male:
                 if (checked)
                     patient_sex = "Male";
-                    break;
+                break;
         }
     }
 
     /**
      * Update w/ check for interval. If passed, calls UI update.
+     *
      * @param event Accelerometer Sensor Event.
      */
     @Override
@@ -165,6 +234,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 sensor_x = event.values[0];
                 sensor_y = event.values[1] - (float) 9.81;
                 sensor_z = event.values[2];
+                PATIENT_DATABASE.insertPatientData(patient_table_name, String.valueOf(current_location), sensor_x, sensor_y, sensor_z);
                 new UpdateGraphs().execute();
             }
         }
@@ -173,12 +243,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Required Override for sensor Accuracy Changes
      * ***** Empty!
-     * @param sensor Accelerometer Sensor
+     *
+     * @param sensor   Accelerometer Sensor
      * @param accuracy Accuracy Value
      */
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
 
+    protected Boolean checkPatientData() {
+        return (patient_sex != null &&
+                !edit_patient_name.getText().toString().equals("") &&
+                !edit_patient_age.getText().toString().equals("") &&
+                !edit_patient_id.getText().toString().equals(""));
     }
 
     /**
@@ -202,7 +279,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
         health_graph_y.setBackgroundColor(Color.BLACK);
-        health_graph_z = new GraphView(this, graph_values, graph_title +" Z", graph_horlabels, graph_verlabels, GraphView.LINE);
+        health_graph_z = new GraphView(this, graph_values, graph_title + " Z", graph_horlabels, graph_verlabels, GraphView.LINE);
         health_graph_z.setLayoutParams(new ConstraintLayout.LayoutParams(
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                 android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -222,6 +299,30 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     /**
+     * Called when Download button is detected.
+     */
+    public void updateGraphViewDownload() {
+        /* Data */
+        graph_horlabels = new String[]{Integer.toString(startTime), Integer.toString(startTime + 5),
+                Integer.toString(startTime + 10), Integer.toString(startTime + 10), Integer.toString(startTime + 20)};
+        int newStart = 0;
+        graph_values_x = new float[size - newStart];
+        graph_values_y = new float[size - newStart];
+        graph_values_z = new float[size - newStart];
+        for (int i = 0; i < graph_values_x.length; i++) {
+            graph_values_x[i] = graph_values_array_x.get(i + newStart);
+            graph_values_y[i] = graph_values_array_y.get(i + newStart);
+            graph_values_z[i] = graph_values_array_z.get(i + newStart);
+        }
+        health_graph_x.setValues(graph_values_x, graph_horlabels);
+        health_graph_x.invalidate();
+        health_graph_y.setValues(graph_values_y, graph_horlabels);
+        health_graph_y.invalidate();
+        health_graph_z.setValues(graph_values_z, graph_horlabels);
+        health_graph_z.invalidate();
+    }
+
+    /**
      * Called from update from sensor is passed.
      */
     public void updateGraphViewRegistered() {
@@ -233,13 +334,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         int newStart = 0;
         if (size > 20) {
             double temp = Math.floorDiv(size, 20);
-            newStart = (int)temp;
+            newStart = (int) temp;
             newStart = (int) (temp * 20);
             graph_horlabels = new String[]{Integer.toString(newStart), Integer.toString(newStart + 5),
                     Integer.toString(newStart + 10), Integer.toString(newStart + 10), Integer.toString(newStart + 20)};
-            graph_values_x = new float[size-newStart];
-            graph_values_y = new float[size-newStart];
-            graph_values_z = new float[size-newStart];
+            graph_values_x = new float[size - newStart];
+            graph_values_y = new float[size - newStart];
+            graph_values_z = new float[size - newStart];
         } else {
             newStart = startTime;
             graph_values_x = new float[size];
@@ -267,7 +368,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         graph_values_x = new float[0];
         graph_values_y = new float[0];
         graph_values_z = new float[0];
-        graph_horlabels = new String[] {"0", "5", "10", "15", "20"};
+        graph_horlabels = new String[]{"0", "5", "10", "15", "20"};
         health_graph_x.setValues(graph_values_x, graph_horlabels);
         health_graph_x.invalidate();
         health_graph_y.setValues(graph_values_y, graph_horlabels);
@@ -279,15 +380,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Async Task to re-draw graphs!
      */
-    private class UpdateGraphs extends AsyncTask<Void, Void, Void>{
+    private class UpdateGraphs extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
         }
+
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
         }
+
         @Override
         protected Void doInBackground(Void... params) {
             try {
@@ -302,15 +405,17 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Async Task to start sensor!
      */
-    private class ActivateSensor extends AsyncTask<Void, Void, Void>{
+    private class ActivateSensor extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
         }
+
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
         }
+
         @Override
         protected Void doInBackground(Void... params) {
             try {
@@ -319,6 +424,179 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 e.printStackTrace();
             }
             return null;
+        }
+    }
+
+    /**
+     * Check External Storage
+     */
+    private boolean CheckExternalStorageAvail() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Download Database Async Task
+     */
+    public class DownloadDatabaseFile extends AsyncTask<Void, Void, Void> {
+        public final String DOWNLOAD_PATH = Environment.getExternalStorageDirectory().getAbsolutePath()
+                + File.separator + "Android"
+                + File.separator + "Data"
+                + File.separator + "CSE535_ASSIGNMENT2_DOWN"
+                + File.separator;
+        File storage_folder = null;
+        File download_db_file = null;
+        private final String TAG = "Download Task";
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Toast.makeText(MainActivity.this, "Download Started!", Toast.LENGTH_SHORT).show();
+            if (CheckExternalStorageAvail()) {
+                storage_folder = new File(DOWNLOAD_PATH);
+            } else
+                Toast.makeText(MainActivity.this, "External Storage Not Avail!", Toast.LENGTH_SHORT).show();
+            if (!storage_folder.exists()) {
+                storage_folder.mkdir();
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            try {
+                OkHttpClient client = new OkHttpClient();
+                Request request = new Request.Builder().url(SERVER_URL).build();
+                Response response = client.newCall(request).execute();
+                InputStream is = response.body().byteStream();
+                if (!response.isSuccessful()) {
+                    throw new Exception("Failed to download file: " + response);
+                }
+                database_file_down = new File(storage_folder, DATABASE_NAME);
+                Log.i(TAG, "output file "+database_file_down.getName() + "  "+database_file_down.exists());
+                //Create New File if not present
+                if (!database_file_down.exists()) {
+                    database_file_down.createNewFile();
+                    Log.i(TAG, "File Created");
+                }
+                FileOutputStream fos = new FileOutputStream(database_file_down);//Get OutputStream for NewFile Location
+                byte[] buffer = new byte[1024];//Set buffer type
+                int len1 = 0;//init length
+                while ((len1 = is.read(buffer)) != -1) {
+                    fos.write(buffer, 0, len1);//Write new file
+                }
+
+                //Close all connection after doing task
+                fos.close();
+                is.close();
+
+            } catch (Exception e) {
+                download_db_file = null;
+                Log.e(TAG, "Error Do in BKGRD." + e);
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            //Parse DB
+            PATIENT_DATABASE_DOWNLOADED = new DatabaseHandler(MainActivity.this,database_file_down.getAbsolutePath());
+            try {
+                Cursor patient_info =  PATIENT_DATABASE_DOWNLOADED.getAllPatientData(patient_table_name);
+                Toast toast = Toast.makeText(MainActivity.this, "Patient has row count: " + patient_info.getCount(), Toast.LENGTH_SHORT);
+                toast.show();
+                size = 0;
+                current_location = 0;
+                graph_values_array_x = new ArrayList<Float>();
+                graph_values_array_y = new ArrayList<Float>();
+                graph_values_array_z = new ArrayList<Float>();
+
+                int index = 0;
+                if ( patient_info.getCount() >= 10) {
+                    index = patient_info.getCount() - 10;
+                }
+
+                patient_info.moveToPosition(index);
+                startTime = index;
+                while (!patient_info.isAfterLast()) {
+                    graph_values_array_x.add(patient_info.getFloat(patient_info.getColumnIndex(DatabaseHandler.COLUMN_X)));
+                    graph_values_array_y.add(patient_info.getFloat(patient_info.getColumnIndex(DatabaseHandler.COLUMN_Y)));
+                    graph_values_array_z.add(patient_info.getFloat(patient_info.getColumnIndex(DatabaseHandler.COLUMN_Z)));
+                    patient_info.moveToNext();
+                    index++;
+                    size++;
+                    current_location++;
+                }
+                updateGraphViewDownload();
+            } catch (Exception e) {
+                Log.e(TAG, "Patient May not exist in DL file!.");
+                Toast toast = Toast.makeText(MainActivity.this, "Download Complete!", Toast.LENGTH_SHORT);
+                toast.show();
+            }
+
+            // Notifications
+            Log.e(TAG, "Reached Post Execute!.");
+            Toast toast = Toast.makeText(MainActivity.this, "Download Complete!", Toast.LENGTH_SHORT);
+            toast.show();
+            running = false;
+        }
+    }
+
+    /**
+     * Upload Database Async Task
+     */
+    public class UploadDatabaseFile extends AsyncTask<Void, Void, Void> {
+        public final String UPLOAD_PATH = DatabaseHandler.DATABASE_LOCATION;
+        File storage_folder = null;
+        File download_db_file = null;
+        private final String TAG = "Upload Task";
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            Toast.makeText(MainActivity.this, "Upload Started!", Toast.LENGTH_SHORT).show();
+            if (!CheckExternalStorageAvail()) {
+                Toast.makeText(MainActivity.this, "External Storage Not Avail!", Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        @Override
+        protected Void doInBackground(Void... arg0) {
+            OkHttpClient client = new OkHttpClient();
+            try {
+                File database = new File(DatabaseHandler.DATABASE_LOCATION);
+                RequestBody fb = RequestBody.create(MediaType.parse("db"),database);
+
+                RequestBody rb = new MultipartBody.Builder()
+                        .setType(MultipartBody.FORM)
+                        .addFormDataPart("type","db")
+                        .addFormDataPart("uploaded_file",DATABASE_NAME, fb)
+                        .build();
+
+                Request res = new Request.Builder()
+                        .url(SERVER_URL)
+                        .post(rb)
+                        .build();
+                Response response = client.newCall(res).execute();
+
+                if(!response.isSuccessful()){
+                    throw new Exception("Error : "+response);
+                }
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            Log.e(TAG, "Reached Post Execute Upload!.");
+            Toast toast = Toast.makeText(MainActivity.this, "Upload Complete!", Toast.LENGTH_SHORT);
+            toast.show();
         }
     }
 }

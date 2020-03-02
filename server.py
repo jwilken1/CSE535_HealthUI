@@ -1,16 +1,23 @@
-from flask import Flask
-from flask import request
-import json
+import flask
+import werkzeug
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 
-@app.route('/download', methods=['GET'])
+@app.route('/', methods=['GET'])
 def download():
-    return "Download your file!"
+    try:
+        return flask.send_file('./databases/jwilkens.db', as_attachment=True)
+    except Exception as e:
+        return str(e)
 	
-@app.route('/upload', methods=['POST'])
+@app.route('/', methods=['POST'])
 def upload():
-	return "Upload your file!"
+    print("Post Recieved")
+    database_file = flask.request.files['uploaded_file']
+    filename = werkzeug.utils.secure_filename(database_file.filename)
+    print("\nReceived Database File : " + database_file.filename)
+    database_file.save('./databases/' + filename)
+    return "Database Uploaded Successfully"
 
 if __name__ == "__main__":
-	app.run(host='localhost', port=5000)
+	app.run(host='localserver', port=5000)
