@@ -19,9 +19,14 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -135,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                                     + edit_patient_id.getText().toString() + "_"
                                     + edit_patient_age.getText().toString() + "_"
                                     + patient_sex;
-                            if (!patient_table_name_temp.equals(patient_table_name)) {
+                            if (patient_table_name_temp != null && !patient_table_name_temp.equals(patient_table_name)) {
                                 startTime = 0;
                                 size = 0;
                                 current_location = 0;
@@ -468,46 +473,45 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         @Override
         protected Void doInBackground(Void... arg0) {
             try {
-                OkHttpClient client = new OkHttpClient();
-                Request request = new Request.Builder().url(SERVER_URL).build();
-                Response response = client.newCall(request).execute();
-                InputStream is = response.body().byteStream();
-                if (!response.isSuccessful()) {
-                    throw new Exception("Failed to download file: " + response);
+                int count;
+                URL url = new URL(SERVER_URL);
+                HttpURLConnection c = (HttpURLConnection) url.openConnection();
+                c.setRequestMethod("GET");
+                c.connect();
+                if (c.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                    Log.e(TAG, "Server returned HTTP " + c.getResponseCode() + " " + c.getResponseMessage());
                 }
+                int lenghtOfFile = c.getContentLength();
                 database_file_down = new File(storage_folder, DATABASE_NAME);
-                Log.i(TAG, "output file "+database_file_down.getName() + "  "+database_file_down.exists());
-                //Create New File if not present
-                if (!database_file_down.exists()) {
-                    database_file_down.createNewFile();
-                    Log.i(TAG, "File Created");
-                }
-                FileOutputStream fos = new FileOutputStream(database_file_down);//Get OutputStream for NewFile Location
-                byte[] buffer = new byte[1024];//Set buffer type
-                int len1 = 0;//init length
-                while ((len1 = is.read(buffer)) != -1) {
-                    fos.write(buffer, 0, len1);//Write new file
+                InputStream input = new BufferedInputStream(url.openStream());
+                OutputStream output = new FileOutputStream(database_file_down);
+                byte data[] = new byte[1024];
+                long total = 0;
+                try {
+                    while ((count = input.read(data)) != -1) {
+                        total += count;
+                        // writing data to file
+                        output.write(data, 0, count);
+                    }
+                } catch (Exception E) {
+                    Log.e(TAG, "Server buffer nto donez ");
                 }
 
-                //Close all connection after doing task
-                fos.close();
-                is.close();
+                output.flush();
+
+                // closing streams
+                output.close();
+                input.close();
 
             } catch (Exception e) {
                 download_db_file = null;
                 Log.e(TAG, "Error Do in BKGRD." + e);
             }
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void result) {
-            //Parse DB
             PATIENT_DATABASE_DOWNLOADED = new DatabaseHandler(MainActivity.this,database_file_down.getAbsolutePath());
             try {
                 Cursor patient_info =  PATIENT_DATABASE_DOWNLOADED.getAllPatientData(patient_table_name);
-                Toast toast = Toast.makeText(MainActivity.this, "Patient has row count: " + patient_info.getCount(), Toast.LENGTH_SHORT);
-                toast.show();
+                //Toast toast = Toast.makeText(MainActivity.this, "Patient has row count: " + patient_info.getCount(), Toast.LENGTH_SHORT);
+                //toast.show();
                 size = 0;
                 current_location = 0;
                 graph_values_array_x = new ArrayList<Float>();
@@ -533,9 +537,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 updateGraphViewDownload();
             } catch (Exception e) {
                 Log.e(TAG, "Patient May not exist in DL file!.");
-                Toast toast = Toast.makeText(MainActivity.this, "Download Complete!", Toast.LENGTH_SHORT);
-                toast.show();
+                //Toast toast = Toast.makeText(MainActivity.this, "Download Complete!", Toast.LENGTH_SHORT);
+                //toast.show();
             }
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            //Parse DB
+
 
             // Notifications
             Log.e(TAG, "Reached Post Execute!.");

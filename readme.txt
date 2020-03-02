@@ -1,5 +1,5 @@
 # CSE535_HealthUI
-Assignment 1: Health Monitoring UI
+Assignment 2: Health Monitoring UI
 
 Jacob Wilkens
 
@@ -7,5 +7,10 @@ Jacob Wilkens
 
 		API 29 w/ Nexus 3a used to test. 
 
+	databases folder for Flask Server
+
+	Please ensure that you give the app permissions for files!! It doesn't ask you to in the emulator, just blocks it right away!
+	
+
 Demo at: 
-	https://youtu.be/dP76u1AdfLc
+	https://youtu.be/-h6VmyWHrus
